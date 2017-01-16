@@ -6,9 +6,8 @@ This is a test of spanning trees - eventually to find its way into web42 or the 
 Intention is that this creates a spanning tree of http connected nodes, and can ask up the tree to get to any node,
 can also get the closest node to a notional node in a disconnected network, (including where the node is not connected)
 
-#TODO - retries - if message fails, try another route <<< TESTING THIS IN SIM3
-# Figure out why it actually drops likelihood fo connecting at higher connection densities - can test even at 10 nodes
-# -- Make the analysis preditive e.g. test 100 connections (30*30 is too many)
+#TODO - Make the analysis e.g. test 100 connections (30*30 is too many)
+#TODO - use route to avoid loops
 #TODO - make sure have at least two paths to a node
 #TODO - maybe know about third or further degree connections
 #TODO - send info when connect as well as retrieve (receiver then uses for own optimisation, attempt at reverse connection etc)
@@ -289,10 +288,7 @@ class Peer(object):
         """
         #if debug: print "Disconnecting",self
         # Would disconnect HTTP here
-        verbose=True    # xXx remove
         if verbose: print "Node %d disconnecting from %d because %s" % (self.node.nodeid, self.nodeid, reason )
-        #sim.debugprint(level=1)
-        #1/0
         self.connected=False
         # Remove any connections onwards since can no longer connect to those cachedpeers via this one we are disconnecting
         for cachedpeer in self.cachedpeers:
@@ -435,15 +431,16 @@ class Sim(NodeList):
                 print "%d," % percent,
             else:
                 print "%d %d %d%%" % (nodes, i, percent)
-            if percent == 100: # and not had100:    # XXX put back the "and not had100"
-                print ">" # End partial line
-                sim.debugprint(level=1)
-                had100 = True
-            elif percent <100 and had100:
-                print "<"  # End partial line
-                sim.debugprint(level=1)
-                1/0
-                return
+            if verbose:
+                if percent == 100: # and not had100:    # XXX put back the "and not had100"
+                    print ">" # End partial line
+                    sim.debugprint(level=1)
+                    had100 = True
+                elif percent <100 and had100:
+                    print "<"  # End partial line
+                    sim.debugprint(level=1)
+                    1/0
+                    return
         print "."   # End line
 
     def loop(self, loops=1):
@@ -534,8 +531,13 @@ def test_sim2():
     print "nodes=%d connections=%d loops=%d percent=%d" % (nodes, connections, loops, percent)
 
 def test_sim3():
-    inc = 2
-    nodes = 40
+    """
+    Simulate a series of nets, each with larger numbers of nodes.
+    For each net, incrementally add connections (1 per node on average, but added randomly so some nodes have more than others),
+    And report the percentage of connections that are possible
+    """
+    inc = 50        # How
+    nodes = 1000
     for i in range(1, int(nodes/inc)):
         sim.reset() # Clear Sim back to zero
         sim.avgcountconnections(i * inc, line=True, verbose=False)
