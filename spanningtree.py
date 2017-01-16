@@ -28,12 +28,12 @@ class Node(object):
     Represents a node somewhere in the net. This allows for simulations across multiple nodes.
     Note that a "Peer" is the representation inside a node of another node.
     """
-    optimaxconnections = 10
-    optiminconnections = 1
 
     def __init__(self, nodeid=None):
         self.peers = PeerSet()     # Will hold list of peers we know about
         self.nodeid = nodeid if nodeid else randint(1,2**10-1)
+        self.optimaxconnections = 10
+        self.optiminconnections = 1
 
     def __repr__(self):
         return "Node(%d)" % self.nodeid
@@ -45,8 +45,8 @@ class Node(object):
 
     def setminmax(self, min, max):
         # Set min and max connections, (None means don't set)
-        if min: optiminconnections = min
-        if max: optimaxconnections = max
+        if min: self.optiminconnections = min
+        if max: self.optimaxconnections = max
 
     def onconnected(self, peer):
         """
@@ -419,9 +419,9 @@ class Sim(NodeList):
         if verbose: print "%d/%d" % (ok, tests)
         return float(ok) * 100 /tests
 
-    def avgcountconnections(self,nodes, line=False, verbose=False):
+    def avgcountconnections(self,nodes, line=False, optiminconnections=None, optimaxconnections=None, verbose=False):
         self.createnodes(nodes)
-        self.setminmax(int(nodes), int(nodes))
+        self.setminmax(optiminconnections or nodes, optimaxconnections or nodes)
         if not line:
             print "nodes,connections,percent"
         else:
