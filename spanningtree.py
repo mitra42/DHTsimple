@@ -145,6 +145,7 @@ class Node(object):
         """
         verbose = msg.verbose
         hops = msg.hops # Keep a local copy of msg hops at call, don't increment as keep trying to send
+        msg.route.append(self.nodeid)   # Append self to route before sending on, or responding
         if msg.nodeid == self:
             if verbose: print "Message received at nodeid",msg.nodeid
             msg.hops += 1
@@ -391,7 +392,7 @@ class Sim(NodeList):
         return self[randint(0, numnodes-1)]
 
     def findroute(self, source, destn, maxhops=0, verbose=False):
-        msg = PeerMessage(nodeid = self[destn].nodeid, hops=0, tried=None, verbose=verbose)
+        msg = PeerMessage(sourceid = self[source], nodeid = self[destn], hops=0, tried=None, verbose=verbose)
         res = self[source].sendMessage(msg)
         if verbose: print "Success",res.success
         #if not res.success: print "XXX@360",res.err
@@ -463,19 +464,22 @@ class PeerMessage(object):
     """
     pass
 
-    def __init__(self, nodeid=None, hops=0, tried=None, verbose=False, maxhops=100, payload=None):
-        self.nodeid = nodeid
+    def __init__(self, sourceid=None, route=None, nodeid=None, hops=0, tried=None, verbose=False, maxhops=100, payload=None):
+        self.sourceid = sourceid.nodeid if isinstance(sourceid, (Node, Peer)) else sourceid
+        self.nodeid = nodeid.nodeid if isinstance(sourceid, (Node, Peer)) else nodeid
         self.hops = hops
         self.tried = tried or PeerSet() # Initialize if unset
         self.verbose = verbose
         self.payload = payload
         self.maxhops = maxhops
+        self.route = route or []
 
     def copy(self):
-        return PeerMessage(nodeid=self.nodeid, hops=self.hops, tried=self.tried.copy(), verbose=self.verbose, maxhops=self.maxhops, payload=self.payload)
+        return PeerMessage(sourceid=self.sourceid, route=self.route, nodeid=self.nodeid, hops=self.hops, tried=self.tried.copy(),
+                           verbose=self.verbose, maxhops=self.maxhops, payload=self.payload)
 
     def debugprint(self, level=2):
-        print "To: %d Hops=%d maxhops=%d Tried=%s" % (self.nodeid, self.hops, self.maxhops, self.tried)
+        print "To: %d Hops=%d maxhops=%d Route=%s Tried=%s" % (self.nodeid, self.hops, self.maxhops, self.route, self.tried, )
 
 class PeerResponse(object):
     """
